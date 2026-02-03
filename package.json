@@ -9,7 +9,7 @@
     "lint": "next lint"
   },
   "dependencies": {
-    "mongodb": "^6.9.0",
+    "mongodb": "^7.0.0",
     "next": "^16.1.5",
     "openai": "^4.58.1",
     "react": "^18.3.1",
