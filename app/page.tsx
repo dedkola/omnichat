@@ -58,13 +58,13 @@ export default function HomePage() {
   useEffect(() => {
     // Load last logs on first render using DB settings from the UI (if any)
     try {
-      const settingsStr = typeof window !== "undefined"
-        ? localStorage.getItem("settings")
-        : null;
+      const settingsStr =
+        typeof window !== "undefined" ? localStorage.getItem("settings") : null;
       const settings = settingsStr ? JSON.parse(settingsStr) : {};
 
       // Auto-open settings on first visit when nothing is configured
-      const hasLlm = settings.llm?.openai?.apiKey || settings.llm?.lmstudio?.model;
+      const hasLlm =
+        settings.llm?.openai?.apiKey || settings.llm?.lmstudio?.model;
       const hasDb = settings.database?.mongoUri;
       if (!hasLlm && !hasDb) {
         setSettingsOpen(true);
@@ -75,7 +75,9 @@ export default function HomePage() {
         headers: { "Content-Type": "application/json" },
         body: JSON.stringify({ settings }),
       })
-        .then((r) => (r.ok ? r.json() : Promise.reject(new Error("Failed to load logs"))))
+        .then((r) =>
+          r.ok ? r.json() : Promise.reject(new Error("Failed to load logs")),
+        )
         .then((data) => {
           const mapped = (data.logs as LogItem[]).reverse().flatMap((l) => [
             { role: "user" as const, content: l.question },
@@ -83,7 +85,7 @@ export default function HomePage() {
           ]);
           setMessages(mapped);
         })
-        .catch(() => { });
+        .catch(() => {});
     } catch {
       // If settings parsing fails, just skip loading history
     }
@@ -112,24 +114,30 @@ export default function HomePage() {
 
       // Ensure we have a session id for this conversation
       let currentSessionId = sessionId;
-      if (!currentSessionId && typeof crypto !== "undefined" && crypto.randomUUID) {
+      if (
+        !currentSessionId &&
+        typeof crypto !== "undefined" &&
+        crypto.randomUUID
+      ) {
         currentSessionId = crypto.randomUUID();
         setSessionId(currentSessionId);
       }
-      
+
       const res = await fetch("/api/chat", {
         method: "POST",
         headers: { "Content-Type": "application/json" },
-        body: JSON.stringify({ 
+        body: JSON.stringify({
           message: msg,
           sessionId: currentSessionId,
-          settings: settings
+          settings: settings,
         }),
       });
       const data = await res.json();
 
       if (!res.ok) {
-        throw new Error(data.error || `Request failed with status ${res.status}`);
+        throw new Error(
+          data.error || `Request failed with status ${res.status}`,
+        );
       }
 
       const answer = data.answer ?? "(no answer)";
@@ -167,7 +175,15 @@ export default function HomePage() {
         onNewChat={startNewChat}
         historyVersion={historyVersion}
         dbConnected={dbConnected}
-        llmProvider={chatStats ? (chatStats.provider === "lmstudio" ? "LM Studio" : `OpenAI`) : null}
+        llmProvider={
+          chatStats
+            ? chatStats.provider === "copilot"
+              ? "Copilot"
+              : chatStats.provider === "lmstudio"
+                ? "LM Studio"
+                : "OpenAI"
+            : null
+        }
       />
 
       {/* Main Content */}
@@ -184,9 +200,7 @@ export default function HomePage() {
             >
               <Menu size={20} />
             </button>
-            <h1 className="text-xl font-semibold text-slate-100">
-              OmniChat
-            </h1>
+            <h1 className="text-xl font-semibold text-slate-100">OmniChat</h1>
           </div>
 
           <button

@@ -25,9 +25,7 @@ export default function StatusBar({ dbConnected, stats }: StatusBarProps) {
       <div className="flex items-center gap-1.5 shrink-0">
         <Database size={11} />
         <span>DB:</span>
-        {dbConnected === null && (
-          <span className="text-slate-600">--</span>
-        )}
+        {dbConnected === null && <span className="text-slate-600">--</span>}
         {dbConnected === true && (
           <span className="text-emerald-400">connected</span>
         )}
@@ -43,7 +41,11 @@ export default function StatusBar({ dbConnected, stats }: StatusBarProps) {
         <Cpu size={11} />
         {stats ? (
           <span className="text-slate-400">
-            {stats.provider === "lmstudio" ? "LM Studio" : "OpenAI"}{" "}
+            {stats.provider === "copilot"
+              ? "Copilot"
+              : stats.provider === "lmstudio"
+                ? "LM Studio"
+                : "OpenAI"}{" "}
             <span className="text-slate-300">{stats.model}</span>
           </span>
         ) : (
@@ -60,7 +62,9 @@ export default function StatusBar({ dbConnected, stats }: StatusBarProps) {
             <Zap size={11} />
             <span>
               {stats.tokensPerSecond !== null ? (
-                <span className="text-amber-400">{stats.tokensPerSecond} tok/s</span>
+                <span className="text-amber-400">
+                  {stats.tokensPerSecond} tok/s
+                </span>
               ) : (
                 <span className="text-slate-600">-- tok/s</span>
               )}
@@ -73,8 +77,7 @@ export default function StatusBar({ dbConnected, stats }: StatusBarProps) {
           <div className="flex items-center gap-1.5 shrink-0">
             <Clock size={11} />
             <span>
-              LLM{" "}
-              <span className="text-sky-400">{formatMs(stats.llmMs)}</span>
+              LLM <span className="text-sky-400">{formatMs(stats.llmMs)}</span>
             </span>
           </div>
 

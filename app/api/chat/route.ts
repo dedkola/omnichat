@@ -1,5 +1,6 @@
 import { NextRequest } from "next/server";
 import OpenAI from "openai";
+import { CopilotClient } from "@github/copilot-sdk";
 import { MongoClient } from "mongodb";
 
 export async function POST(req: NextRequest) {
@@ -22,11 +23,48 @@ export async function POST(req: NextRequest) {
     const legacySelectedModel = llmSettings.selectedModel as string | undefined;
     const useLmStudio =
       provider === "lmstudio" || (!provider && legacySelectedModel === "local-model");
+    const useCopilot = provider === "copilot";
 
     const llmStart = Date.now();
 
     // Determine which LLM to use based on settings
-    if (useLmStudio) {
+    if (useCopilot) {
+      // Use GitHub Copilot SDK
+      const githubToken =
+        llmSettings.copilot?.githubToken ||
+        process.env.GITHUB_TOKEN;
+
+      const copilotModel =
+        llmSettings.copilot?.model || "gpt-4.1";
+
+      const clientOptions: Record<string, unknown> = {};
+      if (githubToken) {
+        clientOptions.githubToken = githubToken;
+      } else {
+        // Fall back to logged-in GitHub CLI user
+        clientOptions.useLoggedInUser = true;
+      }
+
+      const client = new CopilotClient(clientOptions);
+      try {
+        await client.start();
+        const session = await client.createSession({ model: copilotModel });
+        try {
+          // Send system instruction as first message, then user message
+          const systemPrompt = settings.systemInstruction || "You are a helpful assistant.";
+          const fullPrompt = `${systemPrompt}\n\nUser: ${message}`;
+
+          const response = await session.sendAndWait({ prompt: fullPrompt });
+          answer = response?.data?.content ?? "";
+          modelUsed = copilotModel;
+          // Token usage is not available from the Copilot SDK
+        } finally {
+          await session.destroy();
+        }
+      } finally {
+        await client.stop();
+      }
+    } else if (useLmStudio) {
       // Use LM Studio or similar local API
       const lmstudioUrl =
         llmSettings.lmstudio?.url ||
@@ -143,7 +181,7 @@ export async function POST(req: NextRequest) {
       answer,
       logged,
       stats: {
-        provider: useLmStudio ? "lmstudio" : "openai",
+        provider: useCopilot ? "copilot" : useLmStudio ? "lmstudio" : "openai",
         model: modelUsed,
         llmMs,
         dbMs,

@@ -62,9 +62,7 @@ export default function Sidebar({
 
     try {
       const settingsStr =
-        typeof window !== "undefined"
-          ? localStorage.getItem("settings")
-          : null;
+        typeof window !== "undefined" ? localStorage.getItem("settings") : null;
       const settings = settingsStr ? JSON.parse(settingsStr) : {};
 
       fetch("/api/logs", {
@@ -73,7 +71,7 @@ export default function Sidebar({
         body: JSON.stringify({ settings }),
       })
         .then((r) =>
-          r.ok ? r.json() : Promise.reject(new Error("Failed to load logs"))
+          r.ok ? r.json() : Promise.reject(new Error("Failed to load logs")),
         )
         .then((data) => {
           if (cancelled) return;
@@ -135,7 +133,7 @@ export default function Sidebar({
         body: JSON.stringify({ settings, search: term }),
       })
         .then((r) =>
-          r.ok ? r.json() : Promise.reject(new Error("Search failed"))
+          r.ok ? r.json() : Promise.reject(new Error("Search failed")),
         )
         .then((data) => {
           setSearchResults((data.logs as LogItem[]) || []);
@@ -176,9 +174,7 @@ export default function Sidebar({
             {dbConnected === true && (
               <span className="text-emerald-400">ok</span>
             )}
-            {dbConnected === false && (
-              <span className="text-red-400">off</span>
-            )}
+            {dbConnected === false && <span className="text-red-400">off</span>}
           </div>
           <div className="w-px h-3 bg-slate-700" />
           <div className="flex items-center gap-1.5">

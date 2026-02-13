@@ -2,14 +2,13 @@
 @tailwind components;
 @tailwind utilities;
 
-
 :root {
   --background: #0f172a;
   --foreground: #f8fafc;
 }
 
 body {
-  font-family: 'Inter', sans-serif;
+  font-family: "Inter", sans-serif;
   background-color: #0f172a;
   color: #f8fafc;
 }
