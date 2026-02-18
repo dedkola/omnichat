@@ -9,6 +9,9 @@ import {
   Search,
   Database,
   Cpu,
+  Trash2,
+  CheckSquare,
+  Square,
 } from "lucide-react";
 
 interface LogItem {
@@ -27,6 +30,8 @@ interface SidebarProps {
   historyVersion: number;
   dbConnected: boolean | null;
   llmProvider: string | null;
+  activeSessionId: string | null;
+  onDeleteChats: (deletedSessionIds: string[] | null) => void;
 }
 
 export default function Sidebar({
@@ -37,6 +42,8 @@ export default function Sidebar({
   historyVersion,
   dbConnected,
   llmProvider,
+  activeSessionId,
+  onDeleteChats,
 }: SidebarProps) {
   const [tab, setTab] = useState<"history" | "search">("history");
 
@@ -53,6 +60,11 @@ export default function Sidebar({
   const [hasSearched, setHasSearched] = useState(false);
   const searchInputRef = useRef<HTMLInputElement>(null);
   const debounceRef = useRef<ReturnType<typeof setTimeout> | null>(null);
+
+  // Selection mode state
+  const [selectionMode, setSelectionMode] = useState(false);
+  const [selectedKeys, setSelectedKeys] = useState<Set<string>>(new Set());
+  const [deleting, setDeleting] = useState(false);
 
   // Load history
   useEffect(() => {
@@ -165,6 +177,32 @@ export default function Sidebar({
     document.addEventListener("keydown", handleKeyDown);
     return () => document.removeEventListener("keydown", handleKeyDown);
   }, [isOpen, onToggle]);
+
+  async function callDelete(sessionIds: string[] | null) {
+    setDeleting(true);
+    try {
+      const settingsStr = localStorage.getItem("settings");
+      const settings = settingsStr ? JSON.parse(settingsStr) : {};
+      const res = await fetch("/api/logs/delete", {
+        method: "POST",
+        headers: { "Content-Type": "application/json" },
+        body: JSON.stringify({
+          settings,
+          ...(sessionIds !== null ? { sessionIds } : {}),
+        }),
+      });
+      if (!res.ok) {
+        throw new Error("Failed to delete chats");
+      }
+      onDeleteChats(sessionIds);
+      setSelectionMode(false);
+      setSelectedKeys(new Set());
+    } catch {
+      // best-effort, silently fail
+    } finally {
+      setDeleting(false);
+    }
+  }
 
   if (!isOpen) return null;
 
@@ -284,15 +322,65 @@ export default function Sidebar({
         </div>
 
         {/* Header */}
-        <div className="p-4 border-b border-slate-700 flex items-center justify-between">
-          <h2 className="text-lg font-semibold text-slate-100">Chats</h2>
-          <button
-            onClick={onToggle}
-            className="md:hidden p-2 hover:bg-slate-800 rounded-lg text-slate-400 hover:text-white transition-colors"
-          >
-            <X size={20} />
-          </button>
-        </div>
+        {selectionMode ? (
+          <div className="p-3 border-b border-slate-700 flex flex-col gap-2">
+            <div className="flex items-center justify-between">
+              <span className="text-sm text-slate-300 font-medium">
+                {selectedKeys.size} selected
+              </span>
+              <button
+                onClick={() => {
+                  setSelectionMode(false);
+                  setSelectedKeys(new Set());
+                }}
+                className="text-xs text-slate-400 hover:text-white transition-colors"
+              >
+                Cancel
+              </button>
+            </div>
+            <div className="flex gap-2">
+              <button
+                onClick={() => {
+                  if (selectedKeys.size > 0) {
+                    callDelete(Array.from(selectedKeys));
+                  }
+                }}
+                disabled={selectedKeys.size === 0 || deleting}
+                className="flex-1 flex items-center justify-center gap-1.5 px-3 py-1.5 rounded-lg text-xs font-medium bg-red-600/20 border border-red-500/40 text-red-400 hover:bg-red-600/30 disabled:opacity-40 disabled:cursor-not-allowed transition-colors"
+              >
+                <Trash2 size={12} />
+                Delete selected
+              </button>
+              <button
+                onClick={() => callDelete(null)}
+                disabled={deleting}
+                className="flex-1 flex items-center justify-center gap-1.5 px-3 py-1.5 rounded-lg text-xs font-medium bg-red-600/20 border border-red-500/40 text-red-400 hover:bg-red-600/30 disabled:opacity-40 disabled:cursor-not-allowed transition-colors"
+              >
+                <Trash2 size={12} />
+                Delete all
+              </button>
+            </div>
+          </div>
+        ) : (
+          <div className="p-4 border-b border-slate-700 flex items-center justify-between">
+            <h2 className="text-lg font-semibold text-slate-100">Chats</h2>
+            <div className="flex items-center gap-1">
+              <button
+                onClick={() => setSelectionMode(true)}
+                className="p-2 hover:bg-slate-800 rounded-lg text-slate-400 hover:text-white transition-colors"
+                title="Select chats to delete"
+              >
+                <CheckSquare size={16} />
+              </button>
+              <button
+                onClick={onToggle}
+                className="md:hidden p-2 hover:bg-slate-800 rounded-lg text-slate-400 hover:text-white transition-colors"
+              >
+                <X size={20} />
+              </button>
+            </div>
+          </div>
+        )}
 
         {/* Tabs */}
         <div className="flex border-b border-slate-700">
@@ -376,17 +464,52 @@ export default function Sidebar({
                   ? conv.title.slice(0, 80) + "…"
                   : conv.title;
 
+              const isActive =
+                activeSessionId !== null &&
+                (conv.sessionId === activeSessionId ||
+                  conv.key === activeSessionId);
+
               return (
                 <div
                   key={conv.key}
-                  className="flex items-start gap-2 px-3 py-2 rounded-lg hover:bg-slate-800 cursor-pointer group transition-colors"
+                  className={`flex items-start gap-2 px-3 py-2 rounded-lg cursor-pointer group transition-colors ${
+                    selectionMode
+                      ? selectedKeys.has(conv.key)
+                        ? "bg-red-900/20 border border-red-500/30"
+                        : "hover:bg-slate-800"
+                      : isActive
+                        ? "bg-slate-700/70 border border-slate-600"
+                        : "hover:bg-slate-800"
+                  }`}
                   onClick={() => {
-                    onSelectChat(conv.sessionId ?? conv.key, conv.allLogs);
+                    if (selectionMode) {
+                      setSelectedKeys((prev) => {
+                        const next = new Set(prev);
+                        if (next.has(conv.key)) {
+                          next.delete(conv.key);
+                        } else {
+                          next.add(conv.key);
+                        }
+                        return next;
+                      });
+                    } else {
+                      onSelectChat(conv.sessionId ?? conv.key, conv.allLogs);
+                    }
                   }}
                 >
-                  <div className="mt-1 text-slate-400">
-                    <MessageSquare size={16} />
-                  </div>
+                  {selectionMode ? (
+                    <div className="mt-1 text-slate-400 shrink-0">
+                      {selectedKeys.has(conv.key) ? (
+                        <CheckSquare size={16} className="text-red-400" />
+                      ) : (
+                        <Square size={16} />
+                      )}
+                    </div>
+                  ) : (
+                    <div className={`mt-1 shrink-0 ${isActive ? "text-blue-400" : "text-slate-400"}`}>
+                      <MessageSquare size={16} />
+                    </div>
+                  )}
                   <div className="flex-1 min-w-0">
                     <div className="text-sm text-slate-100 truncate">
                       {title || "(no question)"}
@@ -411,6 +534,19 @@ export default function Sidebar({
                       )}
                     </div>
                   </div>
+                  {!selectionMode && conv.sessionId && (
+                    <button
+                      onClick={(e) => {
+                        e.stopPropagation();
+                        callDelete([conv.sessionId!]);
+                      }}
+                      disabled={deleting}
+                      className="mt-1 p-1 rounded text-slate-600 hover:text-red-400 hover:bg-red-400/10 opacity-0 group-hover:opacity-100 transition-all disabled:cursor-not-allowed shrink-0"
+                      title="Delete conversation"
+                    >
+                      <Trash2 size={14} />
+                    </button>
+                  )}
                 </div>
               );
             })}

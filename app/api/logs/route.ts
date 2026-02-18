@@ -53,21 +53,62 @@ export async function POST(req: NextRequest) {
     try {
       await client.connect();
       const db = client.db(mongoDb);
+      const col = db.collection("logs");
 
-      const filter = search && typeof search === "string" && search.trim()
-        ? {
-            $or: [
-              { question: { $regex: search.trim(), $options: "i" } },
-              { answer: { $regex: search.trim(), $options: "i" } },
-            ],
-          }
-        : {};
+      const searchTerm =
+        search && typeof search === "string" ? search.trim() : "";
 
-      const logs = await db
-        .collection("logs")
+      if (searchTerm) {
+        // Search: simple filter across all logs, limit 200 so grouping works
+        const logs = await col
+          .find(
+            {
+              $or: [
+                { question: { $regex: searchTerm, $options: "i" } },
+                { answer: { $regex: searchTerm, $options: "i" } },
+              ],
+            },
+            { projection: { _id: 0 } },
+          )
+          .sort({ createdAt: -1 })
+          .limit(200)
+          .toArray();
+        return Response.json({ logs });
+      }
+
+      // History (no search): find the 50 most-recent sessions, then fetch
+      // ALL their logs so grouping in the sidebar always has the full thread.
+      //
+      // Step 1 – find the 50 latest sessionIds (by their most-recent message).
+      //   Logs without a sessionId are treated as their own "session" keyed by
+      //   a synthetic id so they still show up.
+      const recentSessions = await col
+        .aggregate<{ _id: string | null; latestAt: string }>([
+          {
+            $group: {
+              _id: "$sessionId",
+              latestAt: { $max: "$createdAt" },
+            },
+          },
+          { $sort: { latestAt: -1 } },
+          { $limit: 50 },
+        ])
+        .toArray();
+
+      const sessionIds = recentSessions
+        .map((s) => s._id)
+        .filter((id): id is string => typeof id === "string");
+
+      const hasNullSessions = recentSessions.some((s) => s._id === null);
+
+      // Step 2 – fetch every log that belongs to one of those sessions.
+      const filter: Record<string, unknown> = hasNullSessions
+        ? { $or: [{ sessionId: { $in: sessionIds } }, { sessionId: null }, { sessionId: { $exists: false } }] }
+        : { sessionId: { $in: sessionIds } };
+
+      const logs = await col
         .find(filter, { projection: { _id: 0 } })
         .sort({ createdAt: -1 })
-        .limit(50)
         .toArray();
 
       return Response.json({ logs });

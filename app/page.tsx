@@ -182,6 +182,17 @@ export default function HomePage() {
     setChatStats(null);
   }
 
+  function handleDeleteChats(deletedSessionIds: string[] | null) {
+    // null means "all deleted"
+    setHistoryVersion((v) => v + 1);
+    if (
+      deletedSessionIds === null ||
+      (sessionId && deletedSessionIds.includes(sessionId))
+    ) {
+      startNewChat();
+    }
+  }
+
   return (
     <div className="flex h-screen bg-slate-950 text-slate-200 overflow-hidden">
       {/* Sidebar */}
@@ -192,6 +203,8 @@ export default function HomePage() {
         onSelectChat={loadChat}
         historyVersion={historyVersion}
         dbConnected={dbConnected}
+        activeSessionId={sessionId}
+        onDeleteChats={handleDeleteChats}
         llmProvider={
           chatStats
             ? chatStats.provider === "copilot"
