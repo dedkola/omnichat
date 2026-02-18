@@ -1,7 +1,7 @@
 "use client";
 
-import { X, Save, Cpu, Database } from "lucide-react";
-import { useEffect, useState } from "react";
+import { X, Save, Cpu, Database, RefreshCw } from "lucide-react";
+import { useCallback, useEffect, useRef, useState } from "react";
 
 interface SettingsModalProps {
   isOpen: boolean;
@@ -31,6 +31,16 @@ export default function SettingsModal({ isOpen, onClose }: SettingsModalProps) {
 
   // System instruction
   const [systemInstruction, setSystemInstruction] = useState("");
+  const [savedFlash, setSavedFlash] = useState(false);
+
+  type FetchState = "idle" | "loading" | "success" | "error";
+  const [lmModels, setLmModels] = useState<string[]>([]);
+  const [lmFetchState, setLmFetchState] = useState<FetchState>("idle");
+  const [lmFetchError, setLmFetchError] = useState("");
+  const [lmReachable, setLmReachable] = useState<boolean | null>(null);
+  const [openaiModels, setOpenaiModels] = useState<string[]>([]);
+  const [oaiFetchState, setOaiFetchState] = useState<FetchState>("idle");
+  const [oaiFetchError, setOaiFetchError] = useState("");
 
   // Load saved settings when the modal is opened
   useEffect(() => {
@@ -108,6 +118,144 @@ export default function SettingsModal({ isOpen, onClose }: SettingsModalProps) {
     document.addEventListener("keydown", handleKeyDown);
     return () => document.removeEventListener("keydown", handleKeyDown);
   }, [isOpen, onClose]);
+  // Track whether we're past the initial load so auto-save doesn't fire on open
+  const isInitialSave = useRef(true);
+
+  // Auto-save: debounce 500ms after any field change
+  useEffect(() => {
+    if (!isOpen) {
+      isInitialSave.current = true;
+      return;
+    }
+    if (isInitialSave.current) {
+      isInitialSave.current = false;
+      return;
+    }
+    let flashTimer: ReturnType<typeof setTimeout> | null = null;
+    const timer = setTimeout(() => {
+      localStorage.setItem(
+        "settings",
+        JSON.stringify({
+          llm: {
+            provider: llmProvider,
+            openai: { apiKey: openaiApiKey, model: openaiModel },
+            lmstudio: { url: lmstudioUrl, model: lmstudioModel },
+            copilot: { githubToken: copilotToken, model: copilotModel },
+          },
+          database: { mongoUri, mongoDb },
+          systemInstruction,
+        }),
+      );
+      setSavedFlash(true);
+      flashTimer = setTimeout(() => setSavedFlash(false), 1500);
+    }, 500);
+    return () => {
+      clearTimeout(timer);
+      if (flashTimer) clearTimeout(flashTimer);
+    };
+  }, [
+    isOpen,
+    llmProvider,
+    openaiApiKey,
+    openaiModel,
+    lmstudioUrl,
+    lmstudioModel,
+    copilotToken,
+    copilotModel,
+    mongoUri,
+    mongoDb,
+    systemInstruction,
+  ]);
+
+  const fetchLmModels = useCallback(async (url: string, signal?: AbortSignal) => {
+    setLmFetchState("loading");
+    setLmFetchError("");
+    setLmReachable(null);
+    try {
+      const cleanUrl = url.trim().replace(/\/+$/, "");
+      const res = await fetch(`${cleanUrl}/v1/models`, { signal });
+      if (!res.ok) throw new Error(`HTTP ${res.status}`);
+      const data = await res.json();
+      const ids: string[] = (data.data ?? []).map((m: { id: string }) => m.id).sort();
+      setLmModels(ids);
+      setLmFetchState("success");
+      setLmReachable(true);
+      // Only auto-select when no model is currently set
+      setLmstudioModel((current) => {
+        if (!current && ids.length > 0) return ids[0];
+        return current;
+      });
+    } catch (err) {
+      if (err instanceof Error && err.name === "AbortError") return;
+      setLmFetchState("error");
+      setLmReachable(false);
+      setLmFetchError(err instanceof Error ? err.message : "Failed to fetch models");
+    }
+  }, []);
+
+  const fetchOpenAIModels = useCallback(async (apiKey: string, signal?: AbortSignal) => {
+    if (!apiKey) return;
+    setOaiFetchState("loading");
+    setOaiFetchError("");
+    try {
+      const res = await fetch("https://api.openai.com/v1/models", {
+        headers: { Authorization: `Bearer ${apiKey}` },
+        signal,
+      });
+      if (!res.ok) throw new Error(`HTTP ${res.status}`);
+      const data = await res.json();
+      const ids: string[] = (data.data ?? [])
+        .map((m: { id: string }) => m.id)
+        .filter((id: string) => id.includes("gpt"))
+        .sort();
+      setOpenaiModels(ids);
+      setOaiFetchState("success");
+      // Only auto-select when no model is currently set
+      setOpenaiModel((current) => {
+        if (!current && ids.length > 0) return ids[0];
+        return current;
+      });
+    } catch (err) {
+      if (err instanceof Error && err.name === "AbortError") return;
+      setOaiFetchState("error");
+      setOaiFetchError(err instanceof Error ? err.message : "Failed to fetch models");
+    }
+  }, []);
+
+  // Fetch LM Studio models when tab is selected or URL changes
+  useEffect(() => {
+    if (llmProvider !== "lmstudio") {
+      setLmFetchState("idle");
+      setLmFetchError("");
+      setLmReachable(null);
+      setLmModels([]);
+      return;
+    }
+    if (!isOpen) return;
+    const abortController = new AbortController();
+    const timer = setTimeout(() => fetchLmModels(lmstudioUrl, abortController.signal), 600);
+    return () => {
+      clearTimeout(timer);
+      abortController.abort();
+    };
+  }, [isOpen, llmProvider, lmstudioUrl, fetchLmModels]);
+
+  // Fetch OpenAI models when API key changes or OpenAI tab is shown
+  useEffect(() => {
+    if (llmProvider !== "openai") {
+      setOaiFetchState("idle");
+      setOaiFetchError("");
+      setOpenaiModels([]);
+      return;
+    }
+    if (!isOpen || !openaiApiKey) return;
+    const abortController = new AbortController();
+    const timer = setTimeout(() => fetchOpenAIModels(openaiApiKey, abortController.signal), 800);
+    return () => {
+      clearTimeout(timer);
+      abortController.abort();
+    };
+  }, [isOpen, llmProvider, openaiApiKey, fetchOpenAIModels]);
 
   if (!isOpen) return null;
 
@@ -250,23 +398,55 @@ export default function SettingsModal({ isOpen, onClose }: SettingsModalProps) {
                     </p>
                   </div>
 
-                  {/* OpenAI Default Model */}
+                  {/* OpenAI Model */}
                   <div className="space-y-3">
-                    <label className="text-sm font-medium text-slate-400">
-                      Default model
-                    </label>
-                    <select
-                      value={openaiModel}
-                      onChange={(e) => setOpenaiModel(e.target.value)}
-                      className="w-full bg-slate-950 border border-slate-700 rounded-lg p-2.5 text-slate-200 focus:ring-2 focus:ring-blue-500 outline-none"
-                    >
-                      <option value="gpt-3.5-turbo">GPT-3.5 Turbo</option>
-                      <option value="gpt-4">GPT-4</option>
-                      <option value="gpt-4-turbo">GPT-4 Turbo</option>
-                    </select>
+                    <div className="flex items-center justify-between">
+                      <label className="text-sm font-medium text-slate-400">Default model</label>
+                      <button
+                        type="button"
+                        onClick={() => fetchOpenAIModels(openaiApiKey)}
+                        disabled={!openaiApiKey || oaiFetchState === "loading"}
+                        className="flex items-center gap-1 text-xs text-slate-400 hover:text-slate-200 disabled:opacity-50 transition-colors"
+                      >
+                        <RefreshCw size={12} className={oaiFetchState === "loading" ? "animate-spin" : ""} />
+                        Refresh
+                      </button>
+                    </div>
+
+                    {oaiFetchState === "success" && openaiModels.length > 0 ? (
+                      <select
+                        value={openaiModel}
+                        onChange={(e) => setOpenaiModel(e.target.value)}
+                        className="w-full bg-slate-950 border border-slate-700 rounded-lg p-2.5 text-slate-200 focus:ring-2 focus:ring-blue-500 outline-none"
+                      >
+                        {openaiModels.map((m) => (
+                          <option key={m} value={m}>{m}</option>
+                        ))}
+                      </select>
+                    ) : (
+                      <select
+                        value={openaiModel}
+                        onChange={(e) => setOpenaiModel(e.target.value)}
+                        className="w-full bg-slate-950 border border-slate-700 rounded-lg p-2.5 text-slate-200 focus:ring-2 focus:ring-blue-500 outline-none"
+                      >
+                        <option value="gpt-4o">GPT-4o</option>
+                        <option value="gpt-4o-mini">GPT-4o Mini</option>
+                        <option value="gpt-4-turbo">GPT-4 Turbo</option>
+                        <option value="gpt-4">GPT-4</option>
+                        <option value="gpt-3.5-turbo">GPT-3.5 Turbo</option>
+                      </select>
+                    )}
+
+                    {oaiFetchState === "error" && (
+                      <p className="text-xs text-red-400">{oaiFetchError} — showing default model list.</p>
+                    )}
+                    {oaiFetchState === "loading" && (
+                      <p className="text-xs text-slate-500">Fetching models…</p>
+                    )}
                     <p className="text-xs text-slate-500">
-                      This model will be used for all conversations when OpenAI
-                      is selected.
+                      {oaiFetchState === "success"
+                        ? "Model list fetched from OpenAI."
+                        : "Enter your API key above to fetch available models."}
                     </p>
                   </div>
                 </div>
@@ -338,27 +518,58 @@ export default function SettingsModal({ isOpen, onClose }: SettingsModalProps) {
                       placeholder="http://localhost:1234"
                       className="w-full bg-slate-950 border border-slate-700 rounded-lg p-2.5 text-slate-200 focus:ring-2 focus:ring-blue-500 outline-none"
                     />
+                    {lmReachable !== null && (
+                      <p className={`text-xs flex items-center gap-1.5 ${lmReachable ? "text-emerald-400" : "text-red-400"}`}>
+                        <span className={`inline-block w-2 h-2 rounded-full ${lmReachable ? "bg-emerald-400" : "bg-red-400"}`} />
+                        {lmReachable ? "Reachable" : "Unreachable"}
+                      </p>
+                    )}
                     <p className="text-xs text-slate-500">
                       URL of the LM Studio OpenAI-compatible server.
                     </p>
                   </div>
 
-                  {/* LM Studio Model ID */}
+                  {/* LM Studio Model */}
                   <div className="space-y-3">
-                    <label className="text-sm font-medium text-slate-400">
-                      LM Studio Model ID
-                    </label>
-                    <input
-                      type="text"
-                      value={lmstudioModel}
-                      onChange={(e) => setLmstudioModel(e.target.value)}
-                      placeholder="e.g. qwen/qwen3-4b-2507"
-                      className="w-full bg-slate-950 border border-slate-700 rounded-lg p-2.5 text-slate-200 focus:ring-2 focus:ring-blue-500 outline-none"
-                    />
-                    <p className="text-xs text-slate-500">
-                      Exact model identifier shown in LM Studio when you start
-                      the server.
-                    </p>
+                    <div className="flex items-center justify-between">
+                      <label className="text-sm font-medium text-slate-400">Model</label>
+                      <button
+                        type="button"
+                        onClick={() => fetchLmModels(lmstudioUrl)}
+                        disabled={lmFetchState === "loading"}
+                        className="flex items-center gap-1 text-xs text-slate-400 hover:text-slate-200 disabled:opacity-50 transition-colors"
+                      >
+                        <RefreshCw size={12} className={lmFetchState === "loading" ? "animate-spin" : ""} />
+                        Refresh
+                      </button>
+                    </div>
+
+                    {lmFetchState === "success" && lmModels.length > 0 ? (
+                      <select
+                        value={lmstudioModel}
+                        onChange={(e) => setLmstudioModel(e.target.value)}
+                        className="w-full bg-slate-950 border border-slate-700 rounded-lg p-2.5 text-slate-200 focus:ring-2 focus:ring-blue-500 outline-none"
+                      >
+                        {lmModels.map((m) => (
+                          <option key={m} value={m}>{m}</option>
+                        ))}
+                      </select>
+                    ) : (
+                      <input
+                        type="text"
+                        value={lmstudioModel}
+                        onChange={(e) => setLmstudioModel(e.target.value)}
+                        placeholder="e.g. qwen/qwen3-4b-2507"
+                        className="w-full bg-slate-950 border border-slate-700 rounded-lg p-2.5 text-slate-200 focus:ring-2 focus:ring-blue-500 outline-none"
+                      />
+                    )}
+
+                    {lmFetchState === "error" && (
+                      <p className="text-xs text-red-400">{lmFetchError} — enter model ID manually above.</p>
+                    )}
+                    {lmFetchState === "loading" && (
+                      <p className="text-xs text-slate-500">Fetching models…</p>
+                    )}
                   </div>
                 </div>
               )}
@@ -490,19 +701,18 @@ export default function SettingsModal({ isOpen, onClose }: SettingsModalProps) {
           )}
         </div>
 
-        <div className="p-5 border-t border-slate-800 flex justify-end gap-3">
-          <button
-            onClick={onClose}
-            className="px-4 py-2 text-slate-300 hover:text-white hover:bg-slate-800 rounded-lg transition-colors"
+        <div className="p-5 border-t border-slate-800 flex items-center justify-between gap-3">
+          <span
+            className={`text-xs text-emerald-400 transition-opacity duration-500 ${savedFlash ? "opacity-100" : "opacity-0"}`}
           >
-            Cancel
-          </button>
+            Saved
+          </span>
           <button
             onClick={handleSave}
             className="px-6 py-2 bg-blue-600 hover:bg-blue-500 text-white rounded-lg font-medium flex items-center gap-2 transition-colors"
           >
             <Save size={18} />
-            Save Settings
+            Save & Close
           </button>
         </div>
       </div>
