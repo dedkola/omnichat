@@ -29,3 +29,61 @@ body {
 ::-webkit-scrollbar-thumb:hover {
   background: #64748b;
 }
+
+/* Markdown code blocks inside chat messages */
+.prose pre {
+  background: #0f172a;
+  border: 1px solid #334155;
+  border-radius: 0.5rem;
+  padding: 1rem;
+  overflow-x: auto;
+  margin: 0.75rem 0;
+}
+
+.prose pre code {
+  background: transparent;
+  padding: 0;
+  border: none;
+  font-size: 0.8rem;
+  color: #e2e8f0;
+}
+
+.prose :not(pre) > code {
+  background: #1e293b;
+  padding: 0.15rem 0.4rem;
+  border-radius: 0.25rem;
+  font-size: 0.8rem;
+  color: #93c5fd;
+  border: 1px solid #334155;
+}
+
+/* Markdown tables */
+.prose table {
+  border-collapse: collapse;
+  width: 100%;
+  margin: 0.75rem 0;
+}
+
+.prose th,
+.prose td {
+  border: 1px solid #334155;
+  padding: 0.5rem 0.75rem;
+  text-align: left;
+}
+
+.prose th {
+  background: #1e293b;
+  font-weight: 600;
+}
+
+/* Links in prose */
+.prose a {
+  color: #60a5fa;
+  text-decoration: underline;
+  text-underline-offset: 2px;
+}
+
+.prose a:hover {
+  color: #93c5fd;
+}
+

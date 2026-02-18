@@ -1,6 +1,6 @@
 "use client";
 
-import { useEffect, useRef, useState, useCallback } from "react";
+import { useEffect, useRef, useState, useCallback, type KeyboardEvent } from "react";
 import { Menu, Settings } from "lucide-react";
 import ChatMessage from "@/components/ChatMessage";
 import Sidebar from "@/components/Sidebar";
@@ -27,7 +27,9 @@ export default function HomePage() {
   const [historyVersion, setHistoryVersion] = useState(0);
   const [chatStats, setChatStats] = useState<ChatStats | null>(null);
   const [dbConnected, setDbConnected] = useState<boolean | null>(null);
-  const listRef = useRef<HTMLDivElement>(null);
+  const chatContainerRef = useRef<HTMLDivElement>(null);
+  const scrollAnchorRef = useRef<HTMLDivElement>(null);
+  const textareaRef = useRef<HTMLTextAreaElement>(null);
 
   const checkDbConnection = useCallback(() => {
     try {
@@ -85,17 +87,20 @@ export default function HomePage() {
           ]);
           setMessages(mapped);
         })
-        .catch(() => {});
+        .catch(() => { });
     } catch {
       // If settings parsing fails, just skip loading history
     }
   }, []);
 
   useEffect(() => {
-    listRef.current?.scrollTo({
-      top: listRef.current.scrollHeight,
-      behavior: "smooth",
-    });
+    const container = chatContainerRef.current;
+    if (container) {
+      container.scrollTo({
+        top: container.scrollHeight,
+        behavior: "smooth",
+      });
+    }
   }, [messages, loading]);
 
   async function sendMessage(e: React.FormEvent) {
@@ -162,8 +167,19 @@ export default function HomePage() {
   function startNewChat() {
     setMessages([]);
     setSessionId(null);
+    setChatStats(null);
     // Also refresh sidebar history so the just-finished chat appears
     setHistoryVersion((v) => v + 1);
+  }
+
+  function loadChat(chatSessionId: string, logs: LogItem[]) {
+    const mapped = logs.flatMap((l) => [
+      { role: "user" as const, content: l.question },
+      { role: "assistant" as const, content: l.answer },
+    ]);
+    setMessages(mapped);
+    setSessionId(chatSessionId);
+    setChatStats(null);
   }
 
   return (
@@ -173,6 +189,7 @@ export default function HomePage() {
         isOpen={isSidebarOpen}
         onToggle={() => setSidebarOpen(!isSidebarOpen)}
         onNewChat={startNewChat}
+        onSelectChat={loadChat}
         historyVersion={historyVersion}
         dbConnected={dbConnected}
         llmProvider={
@@ -213,7 +230,7 @@ export default function HomePage() {
         </header>
 
         {/* Chat Area */}
-        <div className="flex-1 overflow-y-auto px-4 md:px-0">
+        <div ref={chatContainerRef} className="flex-1 overflow-y-auto px-4 md:px-0">
           <div className="max-w-3xl mx-auto py-8">
             {messages.length === 0 && (
               <div className="flex flex-col items-center justify-center h-64 text-slate-500 space-y-4">
@@ -241,31 +258,48 @@ export default function HomePage() {
                 </div>
               </div>
             )}
-            <div ref={listRef} />
+            <div ref={scrollAnchorRef} />
           </div>
         </div>
 
         {/* Input Area */}
         <div className="p-4 border-t border-slate-800 bg-slate-900/80 backdrop-blur shrink-0">
           <div className="max-w-3xl mx-auto">
-            <form onSubmit={sendMessage} className="flex gap-3">
-              <input
+            <form onSubmit={sendMessage} className="flex gap-3 items-end">
+              <textarea
+                ref={textareaRef}
                 value={input}
-                onChange={(e) => setInput(e.target.value)}
+                onChange={(e) => {
+                  setInput(e.target.value);
+                  // Auto-resize
+                  const ta = e.target;
+                  ta.style.height = "auto";
+                  ta.style.height = Math.min(ta.scrollHeight, 160) + "px";
+                }}
+                onKeyDown={(e: KeyboardEvent<HTMLTextAreaElement>) => {
+                  if (e.key === "Enter" && !e.shiftKey) {
+                    e.preventDefault();
+                    if (input.trim() && !loading) {
+                      sendMessage(e as unknown as React.FormEvent);
+                    }
+                  }
+                }}
                 placeholder="Ask me anything…"
                 disabled={loading}
-                className="flex-1 bg-slate-800 text-slate-200 rounded-xl px-4 py-3 border border-slate-700 focus:outline-none focus:ring-2 focus:ring-blue-500/50 shadow-lg"
+                rows={1}
+                className="flex-1 bg-slate-800 text-slate-200 rounded-xl px-4 py-3 border border-slate-700 focus:outline-none focus:ring-2 focus:ring-blue-500/50 shadow-lg resize-none overflow-y-auto leading-relaxed"
+                style={{ maxHeight: "160px" }}
               />
               <button
                 disabled={loading}
-                className="rounded-xl bg-blue-600 px-6 py-3 text-sm font-medium text-white shadow-md hover:bg-blue-500 disabled:opacity-50 disabled:cursor-not-allowed transition-colors"
+                className="rounded-xl bg-blue-600 px-6 py-3 text-sm font-medium text-white shadow-md hover:bg-blue-500 disabled:opacity-50 disabled:cursor-not-allowed transition-colors shrink-0"
               >
                 Send
               </button>
             </form>
             <div className="text-center mt-2">
               <p className="text-[10px] text-slate-600">
-                AI responses can be inaccurate. Verify important information.
+                Enter to send · Shift+Enter for new line · AI responses can be inaccurate
               </p>
             </div>
           </div>

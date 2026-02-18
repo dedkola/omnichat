@@ -23,6 +23,7 @@ interface SidebarProps {
   isOpen: boolean;
   onToggle: () => void;
   onNewChat: () => void;
+  onSelectChat: (sessionId: string, logs: LogItem[]) => void;
   historyVersion: number;
   dbConnected: boolean | null;
   llmProvider: string | null;
@@ -32,6 +33,7 @@ export default function Sidebar({
   isOpen,
   onToggle,
   onNewChat,
+  onSelectChat,
   historyVersion,
   dbConnected,
   llmProvider,
@@ -57,7 +59,11 @@ export default function Sidebar({
     if (!isOpen) return;
 
     let cancelled = false;
-    setLoading(true);
+    // Only show loading spinner on initial load, not background refreshes
+    const isInitialLoad = logs.length === 0;
+    if (isInitialLoad) {
+      setLoading(true);
+    }
     setError(null);
 
     try {
@@ -150,11 +156,97 @@ export default function Sidebar({
     }
   }
 
+  // Close on Escape key
+  useEffect(() => {
+    if (!isOpen) return;
+    function handleKeyDown(e: KeyboardEvent) {
+      if (e.key === "Escape") onToggle();
+    }
+    document.addEventListener("keydown", handleKeyDown);
+    return () => document.removeEventListener("keydown", handleKeyDown);
+  }, [isOpen, onToggle]);
+
   if (!isOpen) return null;
 
   const historyItems = tab === "history" ? logs : searchResults;
   const isLoading = tab === "history" ? loading : searching;
   const currentError = tab === "history" ? error : searchError;
+
+  // Group logs by sessionId into conversations
+  const conversations = (() => {
+    const grouped = new Map<
+      string,
+      { logs: LogItem[]; firstQuestion: string; latestDate: string }
+    >();
+    const ungrouped: { log: LogItem; index: number }[] = [];
+
+    historyItems.forEach((log, index) => {
+      if (log.sessionId) {
+        const existing = grouped.get(log.sessionId);
+        if (existing) {
+          existing.logs.push(log);
+          if (!existing.latestDate || log.createdAt > existing.latestDate) {
+            existing.latestDate = log.createdAt;
+          }
+        } else {
+          grouped.set(log.sessionId, {
+            logs: [log],
+            firstQuestion: log.question,
+            latestDate: log.createdAt,
+          });
+        }
+      } else {
+        ungrouped.push({ log, index });
+      }
+    });
+
+    const result: {
+      key: string;
+      sessionId: string | null;
+      title: string;
+      date: string;
+      model: string;
+      msgCount: number;
+      allLogs: LogItem[];
+    }[] = [];
+
+    // Add grouped conversations
+    grouped.forEach((value, sessionId) => {
+      const sorted = [...value.logs].sort(
+        (a, b) =>
+          new Date(a.createdAt).getTime() - new Date(b.createdAt).getTime(),
+      );
+      result.push({
+        key: sessionId,
+        sessionId,
+        title: sorted[0].question,
+        date: value.latestDate,
+        model: sorted[sorted.length - 1].model,
+        msgCount: value.logs.length,
+        allLogs: sorted,
+      });
+    });
+
+    // Add ungrouped (legacy) logs
+    ungrouped.forEach(({ log, index }) => {
+      result.push({
+        key: `legacy-${index}`,
+        sessionId: null,
+        title: log.question,
+        date: log.createdAt,
+        model: log.model,
+        msgCount: 1,
+        allLogs: [log],
+      });
+    });
+
+    // Sort by latest date descending
+    result.sort(
+      (a, b) => new Date(b.date).getTime() - new Date(a.date).getTime(),
+    );
+
+    return result;
+  })();
 
   return (
     <>
@@ -170,11 +262,15 @@ export default function Sidebar({
         <div className="h-7 border-b border-slate-800 bg-slate-950/60 flex items-center px-3 gap-3 text-[11px] font-mono text-slate-500 shrink-0">
           <div className="flex items-center gap-1.5">
             <Database size={10} />
-            {dbConnected === null && <span className="text-slate-600">--</span>}
+            {dbConnected === null && (
+              <span className="text-slate-600">--</span>
+            )}
             {dbConnected === true && (
               <span className="text-emerald-400">ok</span>
             )}
-            {dbConnected === false && <span className="text-red-400">off</span>}
+            {dbConnected === false && (
+              <span className="text-red-400">off</span>
+            )}
           </div>
           <div className="w-px h-3 bg-slate-700" />
           <div className="flex items-center gap-1.5">
@@ -184,7 +280,7 @@ export default function Sidebar({
             </span>
           </div>
           <div className="flex-1" />
-          <span className="text-slate-600">{logs.length} logs</span>
+          <span className="text-slate-600">{conversations.length} chats</span>
         </div>
 
         {/* Header */}
@@ -201,22 +297,20 @@ export default function Sidebar({
         {/* Tabs */}
         <div className="flex border-b border-slate-700">
           <button
-            className={`flex-1 flex items-center justify-center gap-1.5 py-2.5 text-xs font-medium transition-colors ${
-              tab === "history"
-                ? "text-blue-400 border-b-2 border-blue-400 bg-slate-800/40"
-                : "text-slate-400 hover:text-slate-200"
-            }`}
+            className={`flex-1 flex items-center justify-center gap-1.5 py-2.5 text-xs font-medium transition-colors ${tab === "history"
+              ? "text-blue-400 border-b-2 border-blue-400 bg-slate-800/40"
+              : "text-slate-400 hover:text-slate-200"
+              }`}
             onClick={() => setTab("history")}
           >
             <Clock size={13} />
             History
           </button>
           <button
-            className={`flex-1 flex items-center justify-center gap-1.5 py-2.5 text-xs font-medium transition-colors ${
-              tab === "search"
-                ? "text-blue-400 border-b-2 border-blue-400 bg-slate-800/40"
-                : "text-slate-400 hover:text-slate-200"
-            }`}
+            className={`flex-1 flex items-center justify-center gap-1.5 py-2.5 text-xs font-medium transition-colors ${tab === "search"
+              ? "text-blue-400 border-b-2 border-blue-400 bg-slate-800/40"
+              : "text-slate-400 hover:text-slate-200"
+              }`}
             onClick={() => setTab("search")}
           >
             <Search size={13} />
@@ -264,7 +358,7 @@ export default function Sidebar({
               {currentError}
             </div>
           )}
-          {!isLoading && !currentError && historyItems.length === 0 && (
+          {!isLoading && !currentError && conversations.length === 0 && (
             <div className="text-center text-slate-500 mt-10 text-sm">
               {tab === "history"
                 ? "No conversations yet."
@@ -275,17 +369,20 @@ export default function Sidebar({
           )}
           {!isLoading &&
             !currentError &&
-            historyItems.map((log, index) => {
-              const date = new Date(log.createdAt);
+            conversations.map((conv) => {
+              const date = new Date(conv.date);
               const title =
-                log.question.length > 80
-                  ? log.question.slice(0, 80) + "…"
-                  : log.question;
+                conv.title.length > 80
+                  ? conv.title.slice(0, 80) + "…"
+                  : conv.title;
 
               return (
                 <div
-                  key={`${log.sessionId ?? "no-session"}-${index}`}
-                  className="flex items-start gap-2 px-3 py-2 rounded-lg hover:bg-slate-800 cursor-default group"
+                  key={conv.key}
+                  className="flex items-start gap-2 px-3 py-2 rounded-lg hover:bg-slate-800 cursor-pointer group transition-colors"
+                  onClick={() => {
+                    onSelectChat(conv.sessionId ?? conv.key, conv.allLogs);
+                  }}
                 >
                   <div className="mt-1 text-slate-400">
                     <MessageSquare size={16} />
@@ -300,10 +397,16 @@ export default function Sidebar({
                           ? "Unknown time"
                           : date.toLocaleString()}
                       </span>
-                      {log.model && (
+                      {conv.msgCount > 1 && (
                         <>
                           <span className="text-slate-700">·</span>
-                          <span className="truncate">{log.model}</span>
+                          <span>{conv.msgCount} msgs</span>
+                        </>
+                      )}
+                      {conv.model && (
+                        <>
+                          <span className="text-slate-700">·</span>
+                          <span className="truncate">{conv.model}</span>
                         </>
                       )}
                     </div>
@@ -315,7 +418,7 @@ export default function Sidebar({
 
         {/* Footer */}
         <div className="p-4 border-t border-slate-700 text-xs text-slate-500 text-center">
-          Powered by Next.js & MongoDB
+          Powered by Next.js &amp; MongoDB
         </div>
       </div>
     </>

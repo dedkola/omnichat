@@ -99,6 +99,16 @@ export default function SettingsModal({ isOpen, onClose }: SettingsModalProps) {
     }
   }, [isOpen]);
 
+  // Close on Escape key
+  useEffect(() => {
+    if (!isOpen) return;
+    function handleKeyDown(e: KeyboardEvent) {
+      if (e.key === "Escape") onClose();
+    }
+    document.addEventListener("keydown", handleKeyDown);
+    return () => document.removeEventListener("keydown", handleKeyDown);
+  }, [isOpen, onClose]);
+
   if (!isOpen) return null;
 
   const handleSave = () => {
@@ -148,22 +158,20 @@ export default function SettingsModal({ isOpen, onClose }: SettingsModalProps) {
         {/* Tab Navigation */}
         <div className="flex border-b border-slate-800">
           <button
-            className={`flex-1 flex items-center justify-center gap-2 py-3 px-4 text-sm font-medium transition-colors ${
-              activeTab === "llm"
+            className={`flex-1 flex items-center justify-center gap-2 py-3 px-4 text-sm font-medium transition-colors ${activeTab === "llm"
                 ? "text-blue-400 border-b-2 border-blue-400 bg-slate-800/50"
                 : "text-slate-400 hover:text-slate-200"
-            }`}
+              }`}
             onClick={() => setActiveTab("llm")}
           >
             <Cpu size={16} />
             LLM Connections
           </button>
           <button
-            className={`flex-1 flex items-center justify-center gap-2 py-3 px-4 text-sm font-medium transition-colors ${
-              activeTab === "database"
+            className={`flex-1 flex items-center justify-center gap-2 py-3 px-4 text-sm font-medium transition-colors ${activeTab === "database"
                 ? "text-emerald-400 border-b-2 border-emerald-400 bg-slate-800/50"
                 : "text-slate-400 hover:text-slate-200"
-            }`}
+              }`}
             onClick={() => setActiveTab("database")}
           >
             <Database size={16} />
@@ -184,33 +192,30 @@ export default function SettingsModal({ isOpen, onClose }: SettingsModalProps) {
                   <button
                     type="button"
                     onClick={() => setLlmProvider("openai")}
-                    className={`px-3 py-2 rounded-lg text-sm font-medium border transition-colors ${
-                      llmProvider === "openai"
+                    className={`px-3 py-2 rounded-lg text-sm font-medium border transition-colors ${llmProvider === "openai"
                         ? "bg-blue-600/20 border-blue-500 text-blue-400"
                         : "bg-slate-900 border-slate-700 text-slate-300 hover:border-slate-500"
-                    }`}
+                      }`}
                   >
                     OpenAI
                   </button>
                   <button
                     type="button"
                     onClick={() => setLlmProvider("copilot")}
-                    className={`px-3 py-2 rounded-lg text-sm font-medium border transition-colors ${
-                      llmProvider === "copilot"
+                    className={`px-3 py-2 rounded-lg text-sm font-medium border transition-colors ${llmProvider === "copilot"
                         ? "bg-blue-600/20 border-blue-500 text-blue-400"
                         : "bg-slate-900 border-slate-700 text-slate-300 hover:border-slate-500"
-                    }`}
+                      }`}
                   >
                     Copilot
                   </button>
                   <button
                     type="button"
                     onClick={() => setLlmProvider("lmstudio")}
-                    className={`px-3 py-2 rounded-lg text-sm font-medium border transition-colors ${
-                      llmProvider === "lmstudio"
+                    className={`px-3 py-2 rounded-lg text-sm font-medium border transition-colors ${llmProvider === "lmstudio"
                         ? "bg-blue-600/20 border-blue-500 text-blue-400"
                         : "bg-slate-900 border-slate-700 text-slate-300 hover:border-slate-500"
-                    }`}
+                      }`}
                   >
                     LM Studio
                   </button>
