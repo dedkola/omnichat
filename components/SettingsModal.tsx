@@ -172,10 +172,15 @@ export default function SettingsModal({ isOpen, onClose }: SettingsModalProps) {
     setLmFetchError("");
     setLmReachable(null);
     try {
-      const cleanUrl = url.trim().replace(/\/+$/, "");
-      const res = await fetch(`${cleanUrl}/v1/models`, { signal });
+      const res = await fetch("/api/lmstudio-models", {
+        method: "POST",
+        headers: { "Content-Type": "application/json" },
+        body: JSON.stringify({ url }),
+        signal,
+      });
       if (!res.ok) throw new Error(`HTTP ${res.status}`);
       const data = await res.json();
+      if (data.error) throw new Error(data.error);
       const ids: string[] = (data.data ?? []).map((m: { id: string }) => m.id).sort();
       setLmModels(ids);
       setLmFetchState("success");
