@@ -102,14 +102,34 @@ export async function POST(req: NextRequest) {
       const hasNullSessions = recentSessions.some((s) => s._id === null);
 
       // Step 2 – fetch every log that belongs to one of those sessions.
-      const filter: Record<string, unknown> = hasNullSessions
-        ? { $or: [{ sessionId: { $in: sessionIds } }, { sessionId: null }, { sessionId: { $exists: false } }] }
-        : { sessionId: { $in: sessionIds } };
-
-      const logs = await col
-        .find(filter, { projection: { _id: 0 } })
-        .sort({ createdAt: -1 })
-        .toArray();
+      // For sessions with a proper sessionId we fetch all their messages so the
+      // sidebar can group them.  For null/missing sessionId (legacy logs) we cap
+      // at 50 to avoid returning the entire collection.
+      let logs;
+      if (hasNullSessions) {
+        const [sessionLogs, nullLogs] = await Promise.all([
+          sessionIds.length > 0
+            ? col
+                .find({ sessionId: { $in: sessionIds } }, { projection: { _id: 0 } })
+                .sort({ createdAt: -1 })
+                .toArray()
+            : Promise.resolve([]),
+          col
+            .find(
+              { $or: [{ sessionId: null }, { sessionId: { $exists: false } }] },
+              { projection: { _id: 0 } },
+            )
+            .sort({ createdAt: -1 })
+            .limit(50)
+            .toArray(),
+        ]);
+        logs = [...sessionLogs, ...nullLogs];
+      } else {
+        logs = await col
+          .find({ sessionId: { $in: sessionIds } }, { projection: { _id: 0 } })
+          .sort({ createdAt: -1 })
+          .toArray();
+      }
 
       return Response.json({ logs });
     } finally {

@@ -58,7 +58,7 @@ export default function HomePage() {
   }, [checkDbConnection]);
 
   useEffect(() => {
-    // Load last logs on first render using DB settings from the UI (if any)
+    // Load the most recent session on first render so the user can continue it
     try {
       const settingsStr =
         typeof window !== "undefined" ? localStorage.getItem("settings") : null;
@@ -81,11 +81,30 @@ export default function HomePage() {
           r.ok ? r.json() : Promise.reject(new Error("Failed to load logs")),
         )
         .then((data) => {
-          const mapped = (data.logs as LogItem[]).reverse().flatMap((l) => [
+          const logs = (data.logs as LogItem[]) || [];
+          if (logs.length === 0) return;
+
+          // Find the most recent session and load only its messages so the
+          // user can continue that conversation.  This also sets sessionId so
+          // subsequent messages are correctly grouped under the same session.
+          const mostRecentSessionId = logs.find((l) => l.sessionId)?.sessionId;
+          const sessionLogs = mostRecentSessionId
+            ? logs.filter((l) => l.sessionId === mostRecentSessionId)
+            : // Fallback: no sessions at all – show the single most-recent log
+              logs.slice(0, 1);
+
+          const sorted = [...sessionLogs].sort(
+            (a, b) =>
+              new Date(a.createdAt).getTime() - new Date(b.createdAt).getTime(),
+          );
+          const mapped = sorted.flatMap((l) => [
             { role: "user" as const, content: l.question },
             { role: "assistant" as const, content: l.answer },
           ]);
           setMessages(mapped);
+          if (mostRecentSessionId) {
+            setSessionId(mostRecentSessionId);
+          }
         })
         .catch(() => { });
     } catch {
@@ -119,12 +138,13 @@ export default function HomePage() {
 
       // Ensure we have a session id for this conversation
       let currentSessionId = sessionId;
-      if (
-        !currentSessionId &&
-        typeof crypto !== "undefined" &&
-        crypto.randomUUID
-      ) {
-        currentSessionId = crypto.randomUUID();
+      if (!currentSessionId) {
+        currentSessionId =
+          typeof crypto !== "undefined" && typeof crypto.randomUUID === "function"
+            ? crypto.randomUUID()
+            : // Fallback for non-secure contexts (e.g. HTTP on LAN) where
+              // crypto.randomUUID is unavailable
+              `${Date.now()}-${Math.random().toString(36).slice(2)}`;
         setSessionId(currentSessionId);
       }
 
