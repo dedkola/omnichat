@@ -10,7 +10,7 @@
   },
   "dependencies": {
     "@github/copilot-sdk": "^0.1.25",
-    "lucide-react": "^0.563.0",
+    "lucide-react": "^0.575.0",
     "mongodb": "^7.1.0",
     "next": "^16.1.6",
     "openai": "^6.22.0",
