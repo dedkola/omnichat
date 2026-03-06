@@ -1,6 +1,6 @@
 import { NextRequest } from "next/server";
 import OpenAI from "openai";
-import { CopilotClient } from "@github/copilot-sdk";
+import { CopilotClient, approveAll } from "@github/copilot-sdk";
 import { MongoClient } from "mongodb";
 
 export async function POST(req: NextRequest) {
@@ -48,7 +48,10 @@ export async function POST(req: NextRequest) {
       const client = new CopilotClient(clientOptions);
       try {
         await client.start();
-        const session = await client.createSession({ model: copilotModel });
+        const session = await client.createSession({
+          model: copilotModel,
+          onPermissionRequest: approveAll,
+        });
         try {
           // Send system instruction as first message, then user message
           const systemPrompt = settings.systemInstruction || "You are a helpful assistant.";
