@@ -14,8 +14,8 @@ importers:
   .:
     dependencies:
       '@github/copilot-sdk':
-        specifier: ^0.2.2
-        version: 0.2.2
+        specifier: ^0.3.0
+        version: 0.3.0
       lucide-react:
         specifier: ^1.14.0
         version: 1.14.0(react@19.2.5)
@@ -27,7 +27,7 @@ importers:
         version: 16.2.4(@babel/core@7.29.0)(react-dom@19.2.5(react@19.2.5))(react@19.2.5)
       openai:
         specifier: ^6.35.0
-        version: 6.35.0(zod@4.3.6)
+        version: 6.35.0(zod@4.4.3)
       react:
         specifier: ^19.2.5
         version: 19.2.5
@@ -177,48 +177,48 @@ packages:
     resolution: {integrity: sha512-VtAOaymWVfZcmZbp6E2mympDIHvyjXs/12LqWYjVw6qjrfF+VK+fyG33kChz3nnK+SU5/NeHOqrTEHS8sXO3OA==}
     engines: {node: ^18.18.0 || ^20.9.0 || >=21.1.0}
 
-  '@github/copilot-darwin-arm64@1.0.31':
-    resolution: {integrity: sha512-DnAbe87U55/egBu/SFdMniQfhnYjfP3ZXXhrba3DZMXQI+91iRAGfPFKAsSlekl0zfNFw8toOkiafr9Hu2lHvA==}
+  '@github/copilot-darwin-arm64@1.0.40':
+    resolution: {integrity: sha512-syHKff/G53VzosHRXG6pX+MEc00tMdly0SZS4jC0fFUSY2/6R7lgi4IEZt57Q6WKdjBiqn8EvEQ94efdRdPEzA==}
     cpu: [arm64]
     os: [darwin]
     hasBin: true
 
-  '@github/copilot-darwin-x64@1.0.31':
-    resolution: {integrity: sha512-mFmuYT3N1JE3zRIwCAPaXGDstL8Npa62Jey3vT4Lo003NfzQrBzvZ4ObAVMTmFQ6pRZzj39rTTKp1vLYGg+K0w==}
+  '@github/copilot-darwin-x64@1.0.40':
+    resolution: {integrity: sha512-ai6PgHLx5SgC7Ht3Hy2tNepdnAnqcWaPPtYFaP2UGS69r1O87JBA/pB2QHVZP3vX34/4RyoOB/WQ1kiT5pvcpg==}
     cpu: [x64]
     os: [darwin]
     hasBin: true
 
-  '@github/copilot-linux-arm64@1.0.31':
-    resolution: {integrity: sha512-R5V7EIqn92f9YMe3zbQkW++Mw8WErDy6hA8Rr95bSJGiTVyWdj5kqPWSAPH6MLjFbC1T5cJQm/1we+QP3XO3Cw==}
+  '@github/copilot-linux-arm64@1.0.40':
+    resolution: {integrity: sha512-mAh8GmGmkkUiFFzBIvXYmReSIw5c3NWHme0iYT2v/72RWNAwRq4HLKP9NhHapZqUPyi7jQnRxllYPybZDFS6Mw==}
     cpu: [arm64]
     os: [linux]
     hasBin: true
 
-  '@github/copilot-linux-x64@1.0.31':
-    resolution: {integrity: sha512-LmcCGmYP9QLim/YMu5e1UlVeqCt/cuMI0fIqkdHs68h+0FGreSnHpn7nA9RbjAbQuPq9HFWeFjG5UpbAHM71Xg==}
+  '@github/copilot-linux-x64@1.0.40':
+    resolution: {integrity: sha512-gCo6RgpXwa39FZSdj5dMkN/z0xT/NS29MpkeYQ/S34SSoUsSbIKUWcuoMjRiXpaDWWuXQsFjXcqnwNs67JOejA==}
     cpu: [x64]
     os: [linux]
     hasBin: true
 
-  '@github/copilot-sdk@0.2.2':
-    resolution: {integrity: sha512-VZCqS08YlUM90bUKJ7VLeIxgTTEHtfXBo84T1IUMNvXRREX2csjPH6Z+CPw3S2468RcCLvzBXcc9LtJJTLIWFw==}
+  '@github/copilot-sdk@0.3.0':
+    resolution: {integrity: sha512-SUo35k56pzzgYgwmDPHcu7kZxPrzXbH66IWXaEf6pmb94DlA709F82HrrDeja087TL4djJ9OuvRFWWOKCosAsg==}
     engines: {node: '>=20.0.0'}
 
-  '@github/copilot-win32-arm64@1.0.31':
-    resolution: {integrity: sha512-OlMPsQYFbl1hzrE0t703BwB9k8lQauQ4ETiiKpXSV4FxUb3DAU9PqWcy1pZoBjmLCni9h1ASQQKmPQ9ERJPm3g==}
+  '@github/copilot-win32-arm64@1.0.40':
+    resolution: {integrity: sha512-59ANg2xfeeWwl8UNqVe4sk2OAizgMjKVRgTALYExHMc8p5HJyL8nrQ9np6pIkO/De0UpR8rUzk4D8oCqU7XLIQ==}
     cpu: [arm64]
     os: [win32]
     hasBin: true
 
-  '@github/copilot-win32-x64@1.0.31':
-    resolution: {integrity: sha512-nK8uRdlKH6TNk1cjBqEPTvzWQxwnDPgNN3M5bB7TBXL6EsaFdUJePz4tqutUPoPbSKQqo+DtmJGT3/+A30ZcXg==}
+  '@github/copilot-win32-x64@1.0.40':
+    resolution: {integrity: sha512-dKS5L7SwzXZI/gaY9LIn8eoTGEPgczGLIgt1KwjfkHgk3achHwIuEjxSqPRVD1Z7q08uuOcuwVzOlwE8V38zNQ==}
     cpu: [x64]
     os: [win32]
     hasBin: true
 
-  '@github/copilot@1.0.31':
-    resolution: {integrity: sha512-AfoVW9pHsKQGtLCpPcvQ8TOwBVF8meo5srle/8cqRSsx882CpIQx5C4uNs6zwrCtqMTo8M8D6zlDIbXkLudrXw==}
+  '@github/copilot@1.0.40':
+    resolution: {integrity: sha512-s35c/9R5q8O2ZQi/rzU9TBpum/DU06dczDSfmepCTisRHVTTKWS703J7kZhZYqL6OIGqnhmLfx4A7afT8YVKKA==}
     hasBin: true
 
   '@humanwhocodes/module-importer@1.0.1':
@@ -2345,8 +2345,8 @@ packages:
     peerDependencies:
       zod: ^3.25.0 || ^4.0.0
 
-  zod@4.3.6:
-    resolution: {integrity: sha512-rftlrkhHZOcjDwkGlnUtZZkvaPHCsDATp4pGpuOOMDaTdDDXF91wuVDJoWoPsKX/3YPQ5fHuF3STjcYyKr+Qhg==}
+  zod@4.4.3:
+    resolution: {integrity: sha512-ytENFjIJFl2UwYglde2jchW2Hwm4GJFLDiSXWdTrJQBIN9Fcyp7n4DhxJEiWNAJMV1/BqWfW/kkg71UDcHJyTQ==}
 
   zwitch@2.0.4:
     resolution: {integrity: sha512-bXE4cR/kVZhKZX/RjPEflHaKVhUVl85noU3v6b8apfQEc1x4A+zBxjZ4lN8LqGd6WZ3dl98pY4o717VFmoPp+A==}
@@ -2504,38 +2504,38 @@ snapshots:
 
   '@eslint/object-schema@2.1.7': {}
 
-  '@github/copilot-darwin-arm64@1.0.31':
+  '@github/copilot-darwin-arm64@1.0.40':
     optional: true
 
-  '@github/copilot-darwin-x64@1.0.31':
+  '@github/copilot-darwin-x64@1.0.40':
     optional: true
 
-  '@github/copilot-linux-arm64@1.0.31':
+  '@github/copilot-linux-arm64@1.0.40':
     optional: true
 
-  '@github/copilot-linux-x64@1.0.31':
+  '@github/copilot-linux-x64@1.0.40':
     optional: true
 
-  '@github/copilot-sdk@0.2.2':
+  '@github/copilot-sdk@0.3.0':
     dependencies:
-      '@github/copilot': 1.0.31
+      '@github/copilot': 1.0.40
       vscode-jsonrpc: 8.2.1
-      zod: 4.3.6
+      zod: 4.4.3
 
-  '@github/copilot-win32-arm64@1.0.31':
+  '@github/copilot-win32-arm64@1.0.40':
     optional: true
 
-  '@github/copilot-win32-x64@1.0.31':
+  '@github/copilot-win32-x64@1.0.40':
     optional: true
 
-  '@github/copilot@1.0.31':
+  '@github/copilot@1.0.40':
     optionalDependencies:
-      '@github/copilot-darwin-arm64': 1.0.31
-      '@github/copilot-darwin-x64': 1.0.31
-      '@github/copilot-linux-arm64': 1.0.31
-      '@github/copilot-linux-x64': 1.0.31
-      '@github/copilot-win32-arm64': 1.0.31
-      '@github/copilot-win32-x64': 1.0.31
+      '@github/copilot-darwin-arm64': 1.0.40
+      '@github/copilot-darwin-x64': 1.0.40
+      '@github/copilot-linux-arm64': 1.0.40
+      '@github/copilot-linux-x64': 1.0.40
+      '@github/copilot-win32-arm64': 1.0.40
+      '@github/copilot-win32-x64': 1.0.40
 
   '@humanwhocodes/module-importer@1.0.1': {}
 
@@ -3467,8 +3467,8 @@ snapshots:
       '@babel/parser': 7.29.2
       eslint: 9.8.0
       hermes-parser: 0.25.1
-      zod: 4.3.6
-      zod-validation-error: 4.0.2(zod@4.3.6)
+      zod: 4.4.3
+      zod-validation-error: 4.0.2(zod@4.4.3)
     transitivePeerDependencies:
       - supports-color
 
@@ -4469,9 +4469,9 @@ snapshots:
       define-properties: 1.2.1
       es-object-atoms: 1.1.1
 
-  openai@6.35.0(zod@4.3.6):
+  openai@6.35.0(zod@4.4.3):
     optionalDependencies:
-      zod: 4.3.6
+      zod: 4.4.3
 
   optionator@0.9.4:
     dependencies:
@@ -5094,10 +5094,10 @@ snapshots:
 
   yocto-queue@0.1.0: {}
 
-  zod-validation-error@4.0.2(zod@4.3.6):
+  zod-validation-error@4.0.2(zod@4.4.3):
     dependencies:
-      zod: 4.3.6
+      zod: 4.4.3
 
-  zod@4.3.6: {}
+  zod@4.4.3: {}
 
   zwitch@2.0.4: {}
