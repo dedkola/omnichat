@@ -2,6 +2,7 @@
   "name": "omnichat",
   "version": "1.0.0",
   "private": true,
+  "packageManager": "pnpm@11.1.0",
   "scripts": {
     "dev": "next dev",
     "build": "next build",
@@ -21,7 +22,7 @@
   },
 
   "pnpm": {
-    "onlyBuiltDependencies": ["sharp"]
+    "onlyBuiltDependencies": ["sharp", "unrs-resolver"]
   },
   "devDependencies": {
     "@tailwindcss/postcss": "^4.3.0",
