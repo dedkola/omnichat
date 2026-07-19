@@ -22,7 +22,7 @@
   },
 
   "pnpm": {
-    "onlyBuiltDependencies": ["sharp", "unrs-resolver"]
+    "onlyBuiltDependencies": ["koffi", "sharp", "unrs-resolver"]
   },
   "devDependencies": {
     "@tailwindcss/postcss": "^4.3.3",
