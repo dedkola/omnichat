@@ -10,7 +10,7 @@
     "lint": "next lint"
   },
   "dependencies": {
-    "@github/copilot-sdk": "^0.2.2",
+    "@github/copilot-sdk": "^1.0.7",
     "lucide-react": "^1.25.0",
     "mongodb": "^7.5.0",
     "next": "^16.2.6",
@@ -22,7 +22,7 @@
   },
 
   "pnpm": {
-    "onlyBuiltDependencies": ["sharp", "unrs-resolver"]
+    "onlyBuiltDependencies": ["koffi", "sharp", "unrs-resolver"]
   },
   "devDependencies": {
     "@tailwindcss/postcss": "^4.3.3",

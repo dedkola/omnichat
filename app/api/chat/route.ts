@@ -62,7 +62,7 @@ export async function POST(req: NextRequest) {
           modelUsed = copilotModel;
           // Token usage is not available from the Copilot SDK
         } finally {
-          await session.destroy();
+          await session.disconnect();
         }
       } finally {
         await client.stop();
