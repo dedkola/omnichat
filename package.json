@@ -14,7 +14,7 @@
     "cf-typegen": "wrangler types --env-interface CloudflareEnv cloudflare-env.d.ts"
   },
   "dependencies": {
-    "@github/copilot-sdk": "^1.0.7",
+    "@github/copilot-sdk": "^1.0.8",
     "@opennextjs/cloudflare": "^1.20.2",
     "lucide-react": "^1.27.0",
     "mongodb": "^7.5.0",
