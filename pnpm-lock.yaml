@@ -24,8 +24,8 @@ importers:
         specifier: ^16.3.5
         version: 16.3.5(@babel/core@7.29.7)(@types/node@26.5.1)(react-dom@19.2.8(react@19.3.0))(react@19.3.0)
       openai:
-        specifier: ^7.15.0
-        version: 7.15.0(@aws-sdk/credential-provider-node@3.972.82)(@smithy/hash-node@4.5.2)(@smithy/signature-v4@5.7.3)(undici@7.29.0)(ws@8.21.0)(zod@4.6.5)
+        specifier: ^7.20.0
+        version: 7.20.0(@aws-sdk/credential-provider-node@3.972.82)(@smithy/hash-node@4.5.2)(@smithy/signature-v4@5.7.3)(undici@7.29.0)(ws@8.21.0)(zod@4.6.5)
       react:
         specifier: ^19.3.0
         version: 19.3.0
@@ -3295,8 +3295,8 @@ packages:
     resolution: {integrity: sha512-kbpaSSGJTWdAY5KPVeMOKXSrPtr8C8C7wodJbcsd51jRnmD+GZu8Y0VoU6Dm5Z4vWr0Ig/1NKuWRKf7j5aaYSg==}
     engines: {node: '>=6'}
 
-  openai@7.15.0:
-    resolution: {integrity: sha512-2DIwesnPSduw68MFx7nAdgvshrgvS8WOan5W8+tgUMlAy/tY+Q41g80Pa+w/v64rHA6rtn+dketa8QvMVxU96w==}
+  openai@7.20.0:
+    resolution: {integrity: sha512-5x5ru4cKEvEqHqYZbdIbT57OE7KqmP9YYxZiUKuKng016grOHXqom1vmu34MTPPW30q+lcP9RhxAbaRse+Xlcw==}
     engines: {node: '>=22.0.0'}
     peerDependencies:
       '@aws-sdk/credential-provider-node': '>=3.972.0 <4'
@@ -7712,7 +7712,7 @@ snapshots:
     dependencies:
       mimic-fn: 2.1.0
 
-  openai@7.15.0(@aws-sdk/credential-provider-node@3.972.82)(@smithy/hash-node@4.5.2)(@smithy/signature-v4@5.7.3)(undici@7.29.0)(ws@8.21.0)(zod@4.6.5):
+  openai@7.20.0(@aws-sdk/credential-provider-node@3.972.82)(@smithy/hash-node@4.5.2)(@smithy/signature-v4@5.7.3)(undici@7.29.0)(ws@8.21.0)(zod@4.6.5):
     optionalDependencies:
       '@aws-sdk/credential-provider-node': 3.972.82
       '@smithy/hash-node': 4.5.2
