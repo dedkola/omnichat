@@ -16,7 +16,7 @@
   "dependencies": {
     "@github/copilot-sdk": "^1.0.34",
     "@opennextjs/cloudflare": "^1.20.17",
-    "lucide-react": "^1.74.0",
+    "lucide-react": "^1.78.0",
     "mongodb": "^7.9.0",
     "next": "^16.4.6",
     "openai": "^7.57.0",
